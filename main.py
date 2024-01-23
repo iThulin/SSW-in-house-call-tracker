@@ -1,8 +1,7 @@
 import sys
-import os
 import csv
 
-from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QGridLayout, QApplication)
+from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QGridLayout, QApplication)
 from PyQt6.QtCore import Qt
 
 # Constants
@@ -11,23 +10,15 @@ contacted_file_path = 'Data\Contacted.csv'
 
 class MainWindow(QWidget):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.current_account_index = 0
+        self.account_list = data
+        self.contacted = []
 
         self.initUI()
 
     def initUI(self):
-
-        # Default Values
-        self.prospect = "Prospect #"
-        self.firstname = "First Name"
-        self.lastname = "Last Name"
-        self.address = "Address"
-        self.city = "City"
-        self.state = "State"
-        self.zipcode = "Zipcode"
-        self.phone = "Phone"
-        self.productid = "Product"
 
         # Static labels
         prosp = QLabel("Prospect #:")
@@ -41,18 +32,20 @@ class MainWindow(QWidget):
         phone = QLabel("Phone:")
 
         # Dynamic labels
-        prosp_info = QLabel(self.prospect)
-        fname_info = QLabel(self.firstname)
-        lname_info = QLabel(self.lastname)
-        address_info = QLabel(self.address)
-        city_info = QLabel(self.city)
-        state_info = QLabel(self.state)
-        zipcode_info = QLabel(self.zipcode)
-        product_info = QLabel(self.productid)
-        phone_info = QLabel(self.phone)
+        self.prospect_info = QLabel(self.account_list[self.current_account_index]['custnumber'])
+        self.firstname_info = QLabel(self.account_list[self.current_account_index]['firstname'])
+        self.lastname_info = QLabel(self.account_list[self.current_account_index]['lastname'])
+        self.address_info = QLabel(self.account_list[self.current_account_index]['Address1'])
+        self.city_info = QLabel(self.account_list[self.current_account_index]['City'])
+        self.state_info = QLabel(self.account_list[self.current_account_index]['State'])
+        self.zipcode_info = QLabel(self.account_list[self.current_account_index]['Zip'])
+        self.phone_info = QLabel(self.account_list[self.current_account_index]['Phone'])
+        self.productid_info = QLabel(self.account_list[self.current_account_index]['productid'])
 
         # Buttons
-        next_button = QPushButton("Get next contact")
+        next_button = QPushButton("Next Account")
+        next_button.setCheckable(True)
+        next_button.clicked.connect(self.next_button_clicked)
 
         # Init grid
         grid = QGridLayout()
@@ -68,18 +61,19 @@ class MainWindow(QWidget):
         grid.addWidget(zipcode, 7, 0, alignment=Qt.AlignmentFlag.AlignRight)
         grid.addWidget(product, 8, 0, alignment=Qt.AlignmentFlag.AlignRight)
         grid.addWidget(phone, 9, 0, alignment=Qt.AlignmentFlag.AlignRight)
+        grid.addWidget(next_button, 10, 0)
 
         # Build Column 2
-        grid.addWidget(prosp_info, 1, 1)
-        grid.addWidget(fname_info, 2, 1)
-        grid.addWidget(lname_info, 3, 1)
-        grid.addWidget(address_info, 4, 1)
-        grid.addWidget(city_info, 5, 1)
-        grid.addWidget(state_info, 6, 1)
-        grid.addWidget(zipcode_info, 7, 1)
-        grid.addWidget(product_info, 8, 1)
-        grid.addWidget(phone_info, 9, 1)
-        grid.addWidget(next_button, 10, 1)
+        grid.addWidget(self.prospect_info, 1, 1)
+        grid.addWidget(self.firstname_info, 2, 1)
+        grid.addWidget(self.lastname_info, 3, 1)
+        grid.addWidget(self.address_info, 4, 1)
+        grid.addWidget(self.city_info, 5, 1)
+        grid.addWidget(self.state_info, 6, 1)
+        grid.addWidget(self.zipcode_info, 7, 1)
+        grid.addWidget(self.productid_info, 8, 1)
+        grid.addWidget(self.phone_info, 9, 1)
+        
 
         # Adjust grid layout parameters
         grid.setColumnMinimumWidth(1, prosp.sizeHint().width())
@@ -87,20 +81,68 @@ class MainWindow(QWidget):
         self.setLayout(grid)
 
         # Adjust window parameters
-        self.resize(400, 300)
+        self.resize(200, 250)
         self.setWindowTitle("SSW Call Tracking")
-        self.show()
+        self.show()            
 
-    def update_ui(self, entry):
-        self.prospect = entry['custnumber']
-        self.firstname = entry['firstname']
-        self.lastname = entry['lastname']
-        self.address = entry['Address1']
-        self.city = entry['City']
-        self.state = entry['State']
-        self.zipcode = entry['Zip']
-        self.phone = entry['Phone']
-        self.productid = entry['productid']
+    def switch_account(self):
+        # increment index to switch to next account
+
+        # Update the tags on all label elements
+        self.prospect_info.setText(self.account_list[self.current_account_index]['custnumber'])
+        self.firstname_info.setText(self.account_list[self.current_account_index]['firstname'])
+        self.lastname_info.setText(self.account_list[self.current_account_index]['lastname'])
+        self.address_info.setText(self.account_list[self.current_account_index]['Address1'])
+        self.city_info.setText(self.account_list[self.current_account_index]['City'])
+        self.state_info.setText(self.account_list[self.current_account_index]['State'])
+        self.zipcode_info.setText(self.account_list[self.current_account_index]['Zip'])
+        self.phone_info.setText(self.account_list[self.current_account_index]['Phone'])
+        self.productid_info.setText(self.account_list[self.current_account_index]['productid'])
+
+    def mark_contact(self):
+        self.account_list[self.current_account_index]['contacted'] = True
+        self.contacted = self.account_list[self.current_account_index]
+        self.account_list.pop(self.current_account_index)
+    
+    def next_button_clicked(self):
+        self.mark_contact()
+        self.save_data()
+        self.save_contacted()
+        self.switch_account()
+
+    def save_data(self):
+        existing_raw_data = []
+        try:
+            with open(filepath, 'r') as old_raw_file:
+                reader = csv.DictReader(old_raw_file)
+                existing_raw_data = list(reader)
+        except FileNotFoundError:
+            pass
+
+        existing_raw_data = self.account_list
+
+        with open(filepath, 'w', newline='') as new_raw_file:
+            fieldnames = existing_raw_data[0].keys() if existing_raw_data else self.data.keys()
+            writer = csv.DictWriter(new_raw_file, fieldnames = fieldnames)
+            writer.writeheader()
+            writer.writerows(existing_raw_data)
+
+    def save_contacted(self):
+        existing_contacted_data = []
+        try:
+            with open(contacted_file_path, 'r') as old_contacted_file:
+                reader = csv.DictReader(old_contacted_file)
+                existing_contacted_data = list(reader)
+        except FileNotFoundError:
+            pass
+
+        existing_contacted_data.append(self.contacted)
+
+        with open(contacted_file_path, 'w', newline='') as new_contacted_file:
+            fieldnames = existing_contacted_data[0].keys() if existing_contacted_data else self.data.keys()
+            writer = csv.DictWriter(new_contacted_file, fieldnames = fieldnames)
+            writer.writeheader()
+            writer.writerows(existing_contacted_data)
 
 def read_csv(file_path):
     data = []
@@ -110,42 +152,12 @@ def read_csv(file_path):
             data.append(row)
     return data
 
-def mark_contacted(data, entry_id):
-    for entry in data:
-        if entry['id'] == entry_id:
-            entry['contacted'] = True
-            break
-
-def write_csv(file_path, data):
-    fieldnames = data[0].keys()
-    with open(file_path, 'w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(data)
-
-def create_contacted_csv(data, contacted_file_path):
-    contacted_data = [entry for entry in data if entry.get('contacted')]
-    write_csv(contacted_file_path), contacted_data
-
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
-    
-    # Get csv
     data = read_csv(filepath)
-    for entry in data:
-        window.update_ui(entry)
-    
-    # Input LP login credentials
+    window = MainWindow(data)
+    window.show()
 
-    # Load next contact
-    # Navigate to LP profile for contact
-    # Generate new call and tag
-    
-    # After clicking get next, save previous result as contacted and fetch
-
-    
-    
     sys.exit(app.exec())
 
 if __name__ == '__main__':
