@@ -110,11 +110,11 @@ map = np.random.rand(rows, cols) < 0.1
 
 #
 
-#start = (np.random.randint(0, rows), np.random.randint(0, cols))
-#goal = (np.random.randint(0, rows), np.random.randint(0, cols))
+start = (np.random.randint(0, rows), np.random.randint(0, cols))
+goal = (np.random.randint(0, rows), np.random.randint(0, cols))
 
-start = (0, 0)
-goal = (19, 29)
+#start = (0, 0)
+#goal = (19, 29)
 
 print(f'Start: {start}, Goal: {goal}')
 
@@ -163,11 +163,12 @@ while queue:
     #print(v)
 
     # plot the newly discovered vertex
-    ax.plot(v[1], v[0], 'g*')
+    if v == start:
+        ax.plot(v[1], v[0], 'r*')
+    else:
+        ax.plot(v[1], v[0], 'g*')
 
     # If path to goal is complete
-
-    #print(parent.keys())
 
     if key in parent.keys():
         while key in parent.keys():
@@ -181,20 +182,23 @@ while queue:
         # plot the path followed
         for p in path:
             ax.plot(p[1], p[0], 'r.')
+        break
 
+    else:
+        for (costv_u, u) in getNeighbors(v):
+            #print(f'u: {u}, v: {v}')
+            if u not in visited:
+                newcost = distances[v] + costv_u
 
-    for (costv_u, u) in getNeighbors(v):
-        #print(f'u: {u}, v: {v}')
-        if u not in visited:
-            newcost = distances[v] + costv_u
+                if newcost < distances[u]:
+                    distances[u] = newcost
+                    heappush(queue,(newcost, u))
+                    parent[u] = v
 
-            if newcost < distances[u]:
-                distances[u] = newcost
-                heappush(queue,(newcost, u))
-                parent[u] = v
-
-    plt.draw()
-    plt.pause(0.05)
+        plt.draw()
+        plt.pause(0.05)
+        continue
+    break
 
 plt.ioff()
 plt.show()
