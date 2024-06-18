@@ -113,6 +113,15 @@ map = np.random.rand(rows, cols) < 0.1
 start = (np.random.randint(0, rows), np.random.randint(0, cols))
 goal = (np.random.randint(0, rows), np.random.randint(0, cols))
 
+map[start] = True
+
+if map[start] == True:
+    print('Reset Start')
+    map[start] = False
+if map[goal] == True:
+    print('Reset Goal')
+    map[start] = False
+
 #start = (0, 0)
 #goal = (19, 29)
 
@@ -192,7 +201,8 @@ while queue:
 
                 if newcost < distances[u]:
                     distances[u] = newcost
-                    heappush(queue,(newcost, u))
+                    heur = np.sqrt((goal[0]-u[0])**2+(goal[1]-u[1])**2)
+                    heappush(queue,(newcost + heur, u))
                     parent[u] = v
 
         plt.draw()
