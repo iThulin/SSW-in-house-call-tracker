@@ -103,7 +103,7 @@ plt.show()
 '''
 
 # Problem 3 map
-
+'''
 rows = 20
 cols = 30
 map = np.random.rand(rows, cols) < 0.1
@@ -199,6 +199,105 @@ while queue:
         plt.pause(0.05)
         continue
     break
+
+plt.ioff()
+plt.show()
+'''
+
+# Week 2 Implementing RRT
+
+map = np.ones((200, 300))*255
+
+q_start = (100, 150)
+q_goal = (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
+q_new = (0,0)
+K_max = 100 # Max number of vertices in the RRT
+delta_q = 10
+
+
+# initialize graph with one node and no neighbors
+G = {q_start : []}
+k = 0
+
+# Visualize the map
+plt.ion()
+fig, ax = plt.subplots()
+ax.imshow(map)
+ax.plot(q_goal[1], q_goal[0], 'y*')
+ax.plot(q_start[1], q_start[0], 'b*')
+
+
+
+# Helper functions
+def get_random_node():
+    rand_node = (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
+    return rand_node
+
+def get_nearest_node(random_node):
+    distances = [((node[0] - random_node[0])**2 + (node[1] + random_node[1])**2,(node[0], node[1])) for node in G]
+    nearest_index = distances.index(min(distances))
+    print(f'\nG: {G}')
+    print(f'Distances: {distances}')
+    print(f'Index: {nearest_index}')
+    print(f'tuple: {distances[nearest_index]}')
+    return distances[nearest_index][1]
+
+
+def steer_node(q_near, q_rand, delta_q):
+    theta = np.arctan2(q_rand[0] - q_near[0], q_rand[1] - q_rand[1])
+    q_new = (q_near[0] + int(delta_q * np.sin(theta)), q_near[1] + int(delta_q * np.cos(theta)))
+    return q_new
+
+print(f'Start: {q_start}, Goal: {q_goal}')
+
+while k < K_max and q_new != 1: #q_goal and k < K_max:
+    
+    q_rand = get_random_node()
+    print(f'q_rand: {q_rand}')
+
+    ax.plot(q_rand[1], q_rand[0], 'r.')
+
+    #q_near = nearest vertex to q_rand that is already in G
+    q_near = get_nearest_node(q_rand)
+    print(f'q_near: {q_near}')
+
+    ax.plot(q_near[1], q_near[0], 'y.')
+
+    q_new = steer_node(q_near, q_rand, delta_q)
+
+    dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
+    dist_q_rand2q_near = (q_rand[0] - q_near[0])**2 + (q_rand[1] - q_near[1])**2
+
+    print(f'dist_q_near2q_new: {dist_q_near2q_new}, dist_q_rand2q_near: {dist_q_rand2q_near}')
+
+
+    #q_new = compute a new configuration by moving delta_q from q_near into the direction of q_rand
+            # or use q_rand if closer to q_near than delta_q
+    
+    # If q_new < than delta_q from q_goal:
+        #q_new = q_goal
+
+    # If edge between qnear and q_new is collision free
+        # Add q_new to G
+        # Add an edge between q_near and q_new
+        # INcrement k
+    
+
+    # get neighbors of nearest nodes
+    neighbors = G[q_near]
+    print(neighbors)
+    neighbors.append(q_rand)
+    print(neighbors)
+
+    G[q_near] = neighbors
+
+    G[q_rand] = [q_near]
+
+
+    k += 1
+
+    plt.draw()
+    plt.pause(0.5)
 
 plt.ioff()
 plt.show()
