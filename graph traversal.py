@@ -101,9 +101,9 @@ while queue:
 plt.ioff()
 plt.show()
 '''
-
-# Problem 3 map
 '''
+# Problem 3 map
+
 rows = 20
 cols = 30
 map = np.random.rand(rows, cols) < 0.1
@@ -212,8 +212,8 @@ while queue:
 
 plt.ioff()
 plt.show()
-'''
 
+'''
 # Week 2 Implementing RRT
 
 map = np.ones((200, 300))*255
@@ -236,8 +236,6 @@ ax.imshow(map)
 ax.plot(q_goal[1], q_goal[0], 'y*')
 ax.plot(q_start[1], q_start[0], 'g*')
 
-
-
 # Helper functions
 def get_random_node():
     rand_node = (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
@@ -248,13 +246,12 @@ def get_nearest_node(random_node):
     #print(f'\nkeys: {keys}\n')
     distances = [((node[0] - random_node[0])**2 + (node[1] - random_node[1])**2,(node[0], node[1])) for node in keys]
     nearest_index = distances.index(min(distances))
-    for entry in G:
-        print(f'{entry}: {G[entry]}')
+    #for entry in G:
+    #    print(f'{entry}: {G[entry]}')
     #print(f'\nDistances: {distances}')
     #print(f'Index: {nearest_index}')
     #print(f'tuple: {distances[nearest_index]}')
     return distances[nearest_index][1]    
-
 
 def steer_node(q_near, q_rand, delta_q):
     theta = np.arctan2(q_rand[0] - q_near[0], q_rand[1] - q_near[1])
@@ -278,16 +275,9 @@ while k < K_max and q_new != q_goal:
     dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
     dist_q_rand2q_near = (q_rand[0] - q_near[0])**2 + (q_rand[1] - q_near[1])**2
 
-    #print(f'dist_q_near2q_new: {dist_q_near2q_new}, dist_q_rand2q_near: {dist_q_rand2q_near}')
-
-
-    #q_new = compute a new configuration by moving delta_q from q_near into the direction of q_rand
-            # or use q_rand if closer to q_near than delta_q
-
     if dist_q_rand2q_near < dist_q_near2q_new:
         q_new = q_rand
-        #print(f'overide q_new: {q_new}')
-
+        print(f'Override q_new: {q_new}')
 
     # Check if q_new is < delta_q from goal
     dist_q_new2q_goal = np.sqrt((q_new[0]-q_goal[0])**2+(q_new[1]-q_goal[1])**2)    
@@ -295,10 +285,8 @@ while k < K_max and q_new != q_goal:
     if dist_q_new2q_goal < delta_q:        
         q_new = q_goal
 
-
-
     # If edge between q_near and q_new is collision free   
-    if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map):
+    if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map[1]):
 
         # Add q_new to graph
         G[q_near].append(q_new)
