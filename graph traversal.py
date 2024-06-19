@@ -5,219 +5,6 @@ from heapq import heapify, heappush, heappop
 from collections import defaultdict
 from skimage.draw import line_nd, random_shapes
 
-#Problem 1
-'''
-map = [[0, 0, 0],
-        [0.8, 0.9, 0],
-        [0, 0, 0]]
-
-graph = {(0,0) : [(0,1)],
-         (0,1) : [(0,0),(0,2)],
-         (0,2) : [(0,1),(1,2)],
-         (1,2) : [(0,2),(2,2)],
-         (2,0) : [(2,1)],
-         (2,1) : [(2,0),(2,2)],
-         (2,2) : [(2,1),(1,2)]}
-'''
-# Problem 2 map
-'''
-rows = 20
-cols = 30
-map = np.random.rand(rows, cols) < 0.1
-
-#
-
-#start = (np.random.randint(0, rows), np.random.randint(0, cols))
-#goal = (np.random.randint(0, rows), np.random.randint(0, cols))
-
-start = (0, 0)
-goal = (19, 29)
-
-print(f'Start: {start}, Goal: {goal}')
-
-def getNeighbors(u):
-    neighbors = []
-    for delta  in ((0, 1), (0, -1), (1, 0), (-1, 0) ):
-        cand = (u[0] + delta[0], u[1] + delta[1])
-        if (cand[0] >= 0 and cand[0] < len(map) and cand[1] >= 0 and cand[1] <len(map[0]) and map[cand[0]][cand[1]] < 0.3):
-            neighbors.append(cand)
-    return neighbors
-
-#print(getNeighbors((2, 0)))
-
-#plt.show()
-
-#start = (0, 0)
-#goal = (2, 0)
-
-queue = [start]
-visited = {start}
-parent = {}
-key = goal
-path = []
-
-plt.ion()
-fig, ax = plt.subplots()
-
-# Visualize the map
-ax.imshow(map)
-ax.plot(goal[1], goal[0], 'y*')
-ax.plot(start[1], start[0], 'b*')
-
-
-while queue:
-    
-    # Clear the map
-    #ax.clear()
-
-    v = queue.pop(0)
-
-    # plot the newly discovered vertex
-    ax.plot(v[1], v[0], 'g*')
-
-    # If path to goal is complete
-    if key in parent.keys():
-        while key in parent.keys():
-            key = parent[key]
-            path.insert(0, key)
-
-        path.append(goal)
-
-        #print(f'Path: {path}')
-
-        # plot the path followed
-        for p in path:
-            ax.plot(p[1], p[0], 'r.')
-
-
-    for u in getNeighbors(v):
-        if u not in visited:
-            queue.append(u)
-            visited.add(u)
-            parent[u] = v
-
-    plt.draw()
-    plt.pause(0.05)
-
-plt.ioff()
-plt.show()
-'''
-'''
-# Problem 3 map
-
-rows = 20
-cols = 30
-map = np.random.rand(rows, cols) < 0.1
-
-#
-
-start = (np.random.randint(0, rows), np.random.randint(0, cols))
-goal = (np.random.randint(0, rows), np.random.randint(0, cols))
-
-map[start] = True
-
-if map[start] == True:
-    print('Reset Start')
-    map[start] = False
-if map[goal] == True:
-    print('Reset Goal')
-    map[start] = False
-
-#start = (0, 0)
-#goal = (19, 29)
-
-print(f'Start: {start}, Goal: {goal}')
-
-def getNeighbors(u):
-    neighbors = []
-    for delta  in ((0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, 1), (-1, 0), (-1, 1)):
-        cand = (u[0] + delta[0], u[1] + delta[1])
-        if (cand[0] >= 0 and cand[0] < len(map) and cand[1] >= 0 and cand[1] <len(map[0]) and map[cand[0]][cand[1]] < 0.3):
-            match delta:
-                case (0,1) | (1, 0) | (0, -1) | (-1, 0):
-                    dist = 1
-                case (1, 1) | (1, -1) | (-1, 1) | (-1, 1):
-                    dist = math.sqrt(2)
-
-            neighbors.append((dist,cand))
-    return neighbors
-
-queue = [(0,start)]
-heapify(queue)
-visited = {start}
-parent = {}
-key = goal
-path = []
-
-plt.ion()
-fig, ax = plt.subplots()
-
-
-
-distances = defaultdict(lambda: float("inf"))
-distances[start] = 0
-
-# Visualize the map
-ax.imshow(map)
-ax.plot(goal[1], goal[0], 'y*')
-ax.plot(start[1], start[0], 'b*')
-
-
-while queue:
-    
-    # Clear the map
-    #ax.clear()
-
-    (currentdist, v) = heappop(queue)
-    visited.add(v)
-    #print(v)
-
-    # plot the newly discovered vertex
-    if v == start:
-        ax.plot(v[1], v[0], 'r*')
-    else:
-        ax.plot(v[1], v[0], 'g*')
-
-    # If path to goal is complete
-
-    if key in parent.keys():
-        while key in parent.keys():
-            key = parent[key]
-            path.insert(0, key)
-
-        path.append(goal)
-
-        print(f'Path: {path}')
-
-        # plot the path followed
-        for p in path:
-            ax.plot(p[1], p[0], 'r.')
-        break
-
-    else:
-        for (costv_u, u) in getNeighbors(v):
-            #print(f'u: {u}, v: {v}')
-            if u not in visited:
-                newcost = distances[v] + costv_u
-
-                if newcost < distances[u]:
-                    distances[u] = newcost
-                    heur = np.sqrt((goal[0]-u[0])**2+(goal[1]-u[1])**2)
-                    heappush(queue,(newcost + heur, u))
-                    parent[u] = v
-
-        plt.draw()
-        plt.pause(0.05)
-        continue
-    break
-
-plt.ioff()
-plt.show()
-
-'''
-
-
-
 
 # Initialize the map
 map, labels = random_shapes((200,300),20,5,num_channels=1)
@@ -237,10 +24,18 @@ k = 0
 # Visualize the map
 plt.ion()
 fig, ax = plt.subplots()
-#ax.imshow(map, cmap='gray')
-ax.imshow(map)
+ax.imshow(map, cmap='gray')
+#ax.imshow(map)
 ax.plot(q_goal[1], q_goal[0], 'y*')
 ax.plot(q_start[1], q_start[0], 'g*')
+
+# Maximize the window
+manager = plt.get_current_fig_manager()
+try:
+    manager.window.showMaximized()
+except AttributeError:
+    # For other backends where showMaximized is not available
+    manager.resize(*manager.window.maxsize())
 
 # Helper functions
 def get_random_node():
@@ -264,7 +59,7 @@ def check_path(map, a, b):
             ax.plot([a[1], y[i]], [a[0], x[i]], 'm-')
             return False
         
-        ax.plot(y[i], x[i], 'w.')
+        #ax.plot(y[i], x[i], 'w.')
     return True
 
 # RRT algorithm
@@ -276,7 +71,7 @@ while k < K_max and q_new != q_goal:
         print(f"Start or Goal point is not valid (not 255). Start: {map[q_start]}, Goal: {map[q_goal]}")
         exit() 
 
-    if np.random.rand() < 0.1:
+    if np.random.rand() < 0.001:
         q_rand = q_goal
     else:
         q_rand = get_random_node()
@@ -284,13 +79,13 @@ while k < K_max and q_new != q_goal:
     q_near = get_nearest_node(q_rand)
     q_new = steer_node(q_near, q_rand, delta_q)
 
-    if check_path(map, q_near, q_new) == False:
-        continue
-
     dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
 
     if np.sqrt((q_new[0] - q_goal[0])**2 + (q_new[1] - q_goal[1])**2) < delta_q:
         q_new = q_goal
+
+    if check_path(map, q_near, q_new) == False:
+        continue
 
     if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map[0]):
         G[q_near].append((dist_q_near2q_new, q_new))
@@ -335,9 +130,10 @@ while queue:
                 heappush(queue, (new_cost, u))
                 parent[u] = v
 
-for p in path:
-    ax.plot(p[1], p[0], 'r.')
-    #path.append(p)
+for p in range(0, len(path) - 1):
+    ax.plot(path[p][1], path[p][0], 'r.')
+    ax.plot([path[p][1], path[p+1][1]],[path[p][0], path[p+1][0]], 'r-')
+
 
 print(f'Path: {path}')
 
