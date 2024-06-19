@@ -226,7 +226,7 @@ delta_q = 10
 
 
 # initialize graph with one node and no neighbors
-G = {q_start : []}
+G = {(0, q_start) : []}
 k = 0
 
 # Visualize the map
@@ -243,27 +243,25 @@ def get_random_node():
 
 def get_nearest_node(random_node):
     keys = list(G.keys())
-    #print(f'\nkeys: {keys}\n')
-    distances = [((node[0] - random_node[0])**2 + (node[1] - random_node[1])**2,(node[0], node[1])) for node in keys]
+    distances = [((node[1][0] - random_node[0])**2 + (node[1][1] - random_node[1])**2,(node[1][0], node[1][1])) for node in keys]
     nearest_index = distances.index(min(distances))
-    #for entry in G:
-    #    print(f'{entry}: {G[entry]}')
-    #print(f'\nDistances: {distances}')
-    #print(f'Index: {nearest_index}')
-    #print(f'tuple: {distances[nearest_index]}')
-    return distances[nearest_index][1]    
+    return keys[nearest_index]    
 
 def steer_node(q_near, q_rand, delta_q):
-    theta = np.arctan2(q_rand[0] - q_near[0], q_rand[1] - q_near[1])
-    q_new = (q_near[0] + int(delta_q * np.sin(theta)), q_near[1] + int(delta_q * np.cos(theta)))
+    theta = np.arctan2(q_rand[0] - q_near[1][0], q_rand[1] - q_near[1][1])
+    q_new = (q_near[1][0] + int(delta_q * np.sin(theta)), q_near[1][1] + int(delta_q * np.cos(theta)))
     return q_new
 
 print(f'Start: {q_start}, Goal: {q_goal}')
 
 while k < K_max and q_new != q_goal:
     
-    # Generate a random point, the nearest point, and the new point to add to graph
-    q_rand = get_random_node()
+    # Generate a biased random point, the nearest point, and the new point to add to graph
+    if np.random.rand() < 0.1:
+        q_rand = q_goal
+    else:
+        q_rand = get_random_node()
+
     q_near = get_nearest_node(q_rand)
     q_new = steer_node(q_near, q_rand, delta_q)
 
@@ -272,8 +270,8 @@ while k < K_max and q_new != q_goal:
     #print(f'q_near: {q_near}')
     #print(f'q_new : {q_new}')
 
-    dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
-    dist_q_rand2q_near = (q_rand[0] - q_near[0])**2 + (q_rand[1] - q_near[1])**2
+    dist_q_near2q_new = (q_near[1][0] - q_new[0])**2 + (q_near[1][1] - q_new[1])**2
+    dist_q_rand2q_near = (q_rand[0] - q_near[1][0])**2 + (q_rand[1] - q_near[1][1])**2
 
     if dist_q_rand2q_near < dist_q_near2q_new:
         q_new = q_rand
@@ -289,18 +287,77 @@ while k < K_max and q_new != q_goal:
     if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map[1]):
 
         # Add q_new to graph
-        G[q_near].append(q_new)
-        G[q_new] = [q_near]
+        G[q_near].append((dist_q_near2q_new,q_new))
+        G[(dist_q_near2q_new, q_new)] = [(dist_q_near2q_new, q_near)]
 
         # plot new point and line from q_near -> q_new
         ax.plot(q_new[1], q_new[0], 'c.')
-        ax.plot([q_near[1], q_new[1]], [q_near[0], q_new[0]], 'c-')
+        ax.plot([q_near[1][1], q_new[1]], [q_near[1][0], q_new[0]], 'c-')
 
         # Increment number of vertices in graph
         k += 1
 
     plt.draw()
     plt.pause(.1)
+
+queue = [(0, q_start)]
+heapify(queue)
+visited = {q_start}
+parent = {}
+key = q_goal
+path = []
+
+distances = defaultdict(lambda: float("inf"))
+distances[q_start] = 0
+
+while queue:
+
+    (currentdist, v) = heappop(queue)
+    visited.add(v)
+
+    print(f"(currentdist, v): {(currentdist, v)}")
+
+    # If path to goal is complete
+    print(f'Key: {key}, parent.keys: {parent.keys()}')
+
+    if key in parent.keys():
+        while key in parent.keys():
+            print(f"key: {key}, parent[key: {parent[key]}]")
+            key = parent[key]
+            path.insert(0, key)
+
+        #path.append(q_goal)
+
+        print(f'Path: {path}')
+
+        # plot the path followed
+        for p in path:
+            ax.plot(p[1], p[0], 'r.')
+        break
+
+    else:
+        for (costv_u, u) in G: 
+            print(f'u: {u}, v: {v}')
+            if u not in visited:
+                newcost = distances[v] + costv_u
+                print(f'{u} not in visited')
+
+                print(f'newcost: {newcost}, distances[u]: {distances[u]}, costv_u: {costv_u}')
+
+                if newcost < distances[u]:
+                    print(f'newcost < distances[u]')
+                    distances[u] = newcost
+                    #heur = np.sqrt((q_goal[0]-u[0])**2+(q_goal[1]-u[1])**2)
+                    #heappush(queue,(newcost + heur, u))
+                    heappush(queue, (newcost, u))
+                    parent[u] = v
+                    print(f'parent: {parent}')
+                    print(f'parent[u]: {parent[u]}')
+
+        plt.draw()
+        plt.pause(0.05)
+        continue
+    break
 
 plt.ioff()
 plt.show()
