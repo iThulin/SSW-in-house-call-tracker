@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import math
 from heapq import heapify, heappush, heappop
 from collections import defaultdict
+from skimage.draw import line_nd, random_shapes
 
 #Problem 1
 '''
@@ -215,8 +216,12 @@ plt.show()
 
 '''
 
+
+
+
 # Initialize the map
-map = np.ones((200, 300)) * 255
+map, labels = random_shapes((200,300),20,5,num_channels=1)
+#map = np.ones((200, 300)) * 255
 
 # Define start and goal positions
 q_start = (100, 150)
@@ -232,7 +237,8 @@ k = 0
 # Visualize the map
 plt.ion()
 fig, ax = plt.subplots()
-ax.imshow(map, cmap='gray')
+#ax.imshow(map, cmap='gray')
+ax.imshow(map)
 ax.plot(q_goal[1], q_goal[0], 'y*')
 ax.plot(q_start[1], q_start[0], 'g*')
 
@@ -250,10 +256,26 @@ def steer_node(q_near, q_rand, delta_q):
     theta = np.arctan2(q_rand[0] - q_near[0], q_rand[1] - q_near[1])
     return (q_near[0] + int(delta_q * np.sin(theta)), q_near[1] + int(delta_q * np.cos(theta)))
 
+def check_path(map, a, b):
+    (x, y) = line_nd(a, b, integer=True)
+    for i in range(len(x)):
+        value_at_point = map[x[i], y[i]]
+        if value_at_point != 255:
+            ax.plot([a[1], y[i]], [a[0], x[i]], 'm-')
+            return False
+        
+        ax.plot(y[i], x[i], 'w.')
+    return True
+
 # RRT algorithm
 print(f'Start: {q_start}, Goal: {q_goal}')
 
 while k < K_max and q_new != q_goal:
+
+    if map[q_start] != 255 or map[q_goal] != 255:
+        print(f"Start or Goal point is not valid (not 255). Start: {map[q_start]}, Goal: {map[q_goal]}")
+        exit() 
+
     if np.random.rand() < 0.1:
         q_rand = q_goal
     else:
@@ -261,6 +283,9 @@ while k < K_max and q_new != q_goal:
 
     q_near = get_nearest_node(q_rand)
     q_new = steer_node(q_near, q_rand, delta_q)
+
+    if check_path(map, q_near, q_new) == False:
+        continue
 
     dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
 
