@@ -214,49 +214,46 @@ plt.ioff()
 plt.show()
 
 '''
-# Week 2 Implementing RRT
 
-map = np.ones((200, 300))*255
+# Initialize the map
+map = np.ones((200, 300)) * 255
 
+# Define start and goal positions
 q_start = (100, 150)
 q_goal = (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
-q_new = (0,0)
-K_max = 1000 # Max number of vertices in the RRT
+q_new = (0, 0)
+K_max = 1000  # Max number of vertices in the RRT
 delta_q = 10
 
-
-# initialize graph with one node and no neighbors
-G = {(0, q_start) : []}
+# Initialize graph with one node and no neighbors
+G = {q_start: []}
 k = 0
 
 # Visualize the map
 plt.ion()
 fig, ax = plt.subplots()
-ax.imshow(map)
+ax.imshow(map, cmap='gray')
 ax.plot(q_goal[1], q_goal[0], 'y*')
 ax.plot(q_start[1], q_start[0], 'g*')
 
 # Helper functions
 def get_random_node():
-    rand_node = (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
-    return rand_node
+    return (np.random.randint(0, len(map)), np.random.randint(0, len(map[0])))
 
 def get_nearest_node(random_node):
     keys = list(G.keys())
-    distances = [((node[1][0] - random_node[0])**2 + (node[1][1] - random_node[1])**2,(node[1][0], node[1][1])) for node in keys]
+    distances = [((node[0] - random_node[0])**2 + (node[1] - random_node[1])**2, node) for node in keys]
     nearest_index = distances.index(min(distances))
-    return keys[nearest_index]    
+    return distances[nearest_index][1]
 
 def steer_node(q_near, q_rand, delta_q):
-    theta = np.arctan2(q_rand[0] - q_near[1][0], q_rand[1] - q_near[1][1])
-    q_new = (q_near[1][0] + int(delta_q * np.sin(theta)), q_near[1][1] + int(delta_q * np.cos(theta)))
-    return q_new
+    theta = np.arctan2(q_rand[0] - q_near[0], q_rand[1] - q_near[1])
+    return (q_near[0] + int(delta_q * np.sin(theta)), q_near[1] + int(delta_q * np.cos(theta)))
 
+# RRT algorithm
 print(f'Start: {q_start}, Goal: {q_goal}')
 
 while k < K_max and q_new != q_goal:
-    
-    # Generate a biased random point, the nearest point, and the new point to add to graph
     if np.random.rand() < 0.1:
         q_rand = q_goal
     else:
@@ -265,99 +262,59 @@ while k < K_max and q_new != q_goal:
     q_near = get_nearest_node(q_rand)
     q_new = steer_node(q_near, q_rand, delta_q)
 
-    # Print points in question
-    #print(f'q_rand: {q_rand}')
-    #print(f'q_near: {q_near}')
-    #print(f'q_new : {q_new}')
+    dist_q_near2q_new = (q_near[0] - q_new[0])**2 + (q_near[1] - q_new[1])**2
 
-    dist_q_near2q_new = (q_near[1][0] - q_new[0])**2 + (q_near[1][1] - q_new[1])**2
-    dist_q_rand2q_near = (q_rand[0] - q_near[1][0])**2 + (q_rand[1] - q_near[1][1])**2
-
-    if dist_q_rand2q_near < dist_q_near2q_new:
-        q_new = q_rand
-        print(f'Override q_new: {q_new}')
-
-    # Check if q_new is < delta_q from goal
-    dist_q_new2q_goal = np.sqrt((q_new[0]-q_goal[0])**2+(q_new[1]-q_goal[1])**2)    
-    
-    if dist_q_new2q_goal < delta_q:        
+    if np.sqrt((q_new[0] - q_goal[0])**2 + (q_new[1] - q_goal[1])**2) < delta_q:
         q_new = q_goal
 
-    # If edge between q_near and q_new is collision free   
-    if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map[1]):
+    if 0 <= q_new[0] < len(map) and 0 <= q_new[1] < len(map[0]):
+        G[q_near].append((dist_q_near2q_new, q_new))
+        if q_new not in G:
+            G[q_new] = []
+        G[q_new].append((dist_q_near2q_new, q_near))
 
-        # Add q_new to graph
-        G[q_near].append((dist_q_near2q_new,q_new))
-        G[(dist_q_near2q_new, q_new)] = [(dist_q_near2q_new, q_near)]
-
-        # plot new point and line from q_near -> q_new
         ax.plot(q_new[1], q_new[0], 'c.')
-        ax.plot([q_near[1][1], q_new[1]], [q_near[1][0], q_new[0]], 'c-')
+        ax.plot([q_near[1], q_new[1]], [q_near[0], q_new[0]], 'c-')
 
-        # Increment number of vertices in graph
         k += 1
 
     plt.draw()
-    plt.pause(.1)
+    plt.pause(0.1)
 
+# A* algorithm
 queue = [(0, q_start)]
 heapify(queue)
-visited = {q_start}
+visited = set()
 parent = {}
-key = q_goal
 path = []
-
 distances = defaultdict(lambda: float("inf"))
 distances[q_start] = 0
 
 while queue:
-
     (currentdist, v) = heappop(queue)
     visited.add(v)
 
-    print(f"(currentdist, v): {(currentdist, v)}")
-
-    # If path to goal is complete
-    print(f'Key: {key}, parent.keys: {parent.keys()}')
-
-    if key in parent.keys():
-        while key in parent.keys():
-            print(f"key: {key}, parent[key: {parent[key]}]")
-            key = parent[key]
-            path.insert(0, key)
-
-        #path.append(q_goal)
-
-        print(f'Path: {path}')
-
-        # plot the path followed
-        for p in path:
-            ax.plot(p[1], p[0], 'r.')
+    if v == q_goal:
+        while v in parent:
+            path.insert(0, v)
+            v = parent[v]
+        path.insert(0, q_start)
+        path.append(q_goal)
         break
 
-    else:
-        for (costv_u, u) in G: 
-            print(f'u: {u}, v: {v}')
-            if u not in visited:
-                newcost = distances[v] + costv_u
-                print(f'{u} not in visited')
+    for (cost, u) in G[v]:
+        if u not in visited:
+            new_cost = distances[v] + cost
+            if new_cost < distances[u]:
+                distances[u] = new_cost
+                heappush(queue, (new_cost, u))
+                parent[u] = v
 
-                print(f'newcost: {newcost}, distances[u]: {distances[u]}, costv_u: {costv_u}')
+for p in path:
+    ax.plot(p[1], p[0], 'r.')
+    #path.append(p)
 
-                if newcost < distances[u]:
-                    print(f'newcost < distances[u]')
-                    distances[u] = newcost
-                    #heur = np.sqrt((q_goal[0]-u[0])**2+(q_goal[1]-u[1])**2)
-                    #heappush(queue,(newcost + heur, u))
-                    heappush(queue, (newcost, u))
-                    parent[u] = v
-                    print(f'parent: {parent}')
-                    print(f'parent[u]: {parent[u]}')
-
-        plt.draw()
-        plt.pause(0.05)
-        continue
-    break
+print(f'Path: {path}')
 
 plt.ioff()
 plt.show()
